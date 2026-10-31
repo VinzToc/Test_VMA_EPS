@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Test VMA — 10 min</title>
+<meta name="theme-color" content="#0d0f14">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+
+<style>
+  :root {
+    --bg: #0d0f14;
+    --surface: #161a24;
+    --surface2: #1e2433;
+    --green: #00e676;
+    --green-dim: #00b359;
+    --orange: #ff6d2d;
+    --red: #ff3b5c;
+    --blue: #3d8bff;
+    --purple: #a855f7;
+    --text: #f0f2f8;
+    --text-dim: #7a8099;
+    --border: rgba(255,255,255,0.07);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body {
+    background:var(--bg); color:var(--text); font-family:'Outfit',sans-serif;
+    height:100dvh; width:100vw; overflow:hidden; display:flex; flex-direction:column;
+  }
+
+  /* ══ MODAL IDENTITÉ ══ */
+  #identity-modal {
+    position:fixed; inset:0; background:rgba(0,0,0,0.92); z-index:200;
+    display:flex; align-items:center; justify-content:center;
+    padding:16px; backdrop-filter:blur(10px); overflow-y:auto;
+  }
+  #identity-modal.hidden { display:none; }
+  .identity-card {
+    background:var(--surface); border:1px solid var(--border); border-radius:20px;
+    padding:24px 20px 22px; max-width:400px; width:100%;
+    display:flex; flex-direction:column; gap:16px; box-sizing:border-box;
+  }
+  .identity-card h2 {
+    font-family:'Bebas Neue',sans-serif; font-size:1.8rem; letter-spacing:4px;
+    color:var(--green); text-align:center; line-height:1;
+  }
+  .identity-card > p {
+    font-size:0.75rem; color:var(--text-dim); text-align:center;
+    letter-spacing:0.5px; text-transform:uppercase; margin-top:-8px;
+  }
+  .id-section { display:flex; flex-direction:column; gap:8px; }
+  .id-section-title {
+    font-size:0.65rem; color:var(--green); text-transform:uppercase;
+    letter-spacing:2px; font-weight:600; padding-bottom:4px;
+    border-bottom:1px solid rgba(0,230,118,0.2);
+  }
+  .id-row { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  @media (max-width:340px) { .id-row { grid-template-columns:1fr; } }
+  .id-field { display:flex; flex-direction:column; gap:4px; min-width:0; }
+  .id-field label { font-size:0.62rem; color:var(--text-dim); text-transform:uppercase; letter-spacing:1.5px; }
+  .id-field input {
+    background:var(--surface2); border:1.5px solid var(--border); border-radius:10px;
+    color:var(--text); font-family:'Outfit',sans-serif; font-size:1rem; padding:9px 10px;
+    outline:none; transition:border-color 0.2s; -webkit-appearance:none;
+    width:100%; min-width:0; box-sizing:border-box;
+  }
+  .id-field input:focus { border-color:var(--green); }
+  .id-field input::placeholder { color:var(--text-dim); opacity:0.6; }
+  #btn-start-test {
+    background:var(--blue); color:#fff; border:none; border-radius:14px;
+    font-family:'Bebas Neue',sans-serif; font-size:1.5rem; letter-spacing:3px;
+    padding:16px; cursor:pointer; transition:all 0.15s;
+    box-shadow:0 4px 24px rgba(61,139,255,0.3);
+  }
+  #btn-start-test:active { transform:scale(0.97); }
+  .id-msg { font-size:0.7rem; min-height:1em; letter-spacing:0.3px; color:var(--text-dim); }
+  .id-msg.ok { color:var(--green); } .id-msg.err { color:var(--red); }
+  .id-hint { font-size:0.62rem; color:var(--text-dim); letter-spacing:0.3px; }
+  .id-tools { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .btn-tool {
+    background:none; border:1px solid var(--border); border-radius:10px;
+    color:var(--text-dim); font-family:'Outfit',sans-serif; font-size:0.66rem;
+    letter-spacing:1px; padding:10px 6px; cursor:pointer; text-transform:uppercase;
+  }
+  .btn-tool:active { transform:scale(0.97); }
+  #id-pick { display:flex; flex-direction:column; gap:6px; }
+  #id-pick:empty { display:none; }
+  .id-pick-title { font-size:0.7rem; color:var(--orange); letter-spacing:0.5px; }
+  .btn-pick {
+    background:var(--surface2); border:1.5px solid var(--orange); border-radius:10px;
+    color:var(--text); font-family:'Outfit',sans-serif; font-size:0.85rem; padding:10px; cursor:pointer; text-align:left;
+  }
+  #btn-start-test:disabled { opacity:0.5; }
+  #btn-export-res {
+    background:var(--surface2); color:var(--text); border:1px solid var(--border); border-radius:12px;
+    font-family:'Outfit',sans-serif; font-size:0.8rem; letter-spacing:1px; padding:12px; cursor:pointer; text-transform:uppercase;
+  }
+
+  /* ══ HEADER ══ */
+  header {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:10px 18px; background:var(--surface);
+    border-bottom:1px solid var(--border); flex-shrink:0;
+  }
+  header h1 { font-family:'Bebas Neue',sans-serif; font-size:2rem; letter-spacing:3px; color:var(--green); line-height:1; }
+  header .subtitle { font-size:0.72rem; color:var(--text-dim); letter-spacing:1px; text-transform:uppercase; }
+  .header-right { display:flex; flex-direction:column; align-items:flex-end; gap:3px; }
+  .header-names { display:flex; flex-direction:column; align-items:flex-end; gap:1px; }
+  .header-name-runner   { font-size:0.8rem; font-weight:600; color:var(--text); letter-spacing:0.5px; }
+  .header-name-observer { font-size:0.65rem; color:var(--text-dim); letter-spacing:0.5px; }
+  #elapsed-label { font-family:'Bebas Neue',sans-serif; font-size:1.5rem; letter-spacing:2px; color:var(--text-dim); transition:color 0.3s; }
+  #elapsed-label.active { color:var(--orange); }
+
+  /* ══ MAIN ══ */
+  main { flex:1; display:grid; grid-template-columns:33.33% 1fr; overflow:hidden; }
+
+  .chrono-panel {
+    background:var(--surface); border-right:1px solid var(--border);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:12px; padding:14px 10px; position:relative;
+  }
+  .phase-badge {
+    font-size:0.65rem; text-transform:uppercase; letter-spacing:2px;
+    padding:4px 12px; border-radius:99px; font-weight:600; transition:all 0.4s;
+    background:var(--surface2); color:var(--text-dim); text-align:center;
+  }
+  .phase-badge.run  { background:rgba(0,230,118,0.15);  color:var(--green); }
+  .phase-badge.rest { background:rgba(255,109,45,0.15); color:var(--orange); }
+  .big-timer {
+    font-family:'Bebas Neue',sans-serif; font-size:clamp(4rem,10vw,6rem);
+    line-height:1; letter-spacing:4px; transition:color 0.4s; color:var(--text-dim); text-align:center;
+  }
+  .big-timer.run  { color:var(--green);  text-shadow:0 0 40px rgba(0,230,118,0.3); }
+  .big-timer.rest { color:var(--orange); text-shadow:0 0 40px rgba(255,109,45,0.3); }
+  .arc-wrap { position:relative; width:min(120px,18vw); height:min(120px,18vw); }
+  .arc-wrap svg { width:100%; height:100%; transform:rotate(-90deg); }
+  .arc-bg { fill:none; stroke:var(--surface2); stroke-width:7; }
+  .arc-fg { fill:none; stroke-width:7; stroke-linecap:round; transition:stroke-dashoffset 0.9s linear, stroke 0.4s; }
+  .arc-text {
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    font-family:'Bebas Neue',sans-serif; font-size:1.6rem; letter-spacing:2px;
+  }
+  .minute-dots { display:flex; gap:6px; flex-wrap:wrap; justify-content:center; }
+  .dot { width:10px; height:10px; border-radius:50%; background:var(--surface2); border:1.5px solid rgba(255,255,255,0.1); transition:all 0.3s; }
+  .dot.done    { background:var(--green); border-color:var(--green); box-shadow:0 0 6px var(--green-dim); }
+  .dot.current { background:var(--orange); border-color:var(--orange); animation:pulse-dot 0.8s infinite alternate; }
+  @keyframes pulse-dot { from{opacity:0.6;transform:scale(0.9)} to{opacity:1;transform:scale(1.2)} }
+  #minute-label { font-size:0.7rem; color:var(--text-dim); text-transform:uppercase; letter-spacing:1.5px; }
+
+  .controls-panel { display:flex; flex-direction:column; padding:12px 16px; gap:10px; overflow-y:auto; }
+  .courses-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:6px; }
+  .course-cell {
+    background:var(--surface2); border:1px solid var(--border); border-radius:10px;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    padding:6px 4px; gap:2px; min-height:54px;
+  }
+  .course-cell.active { border-color:var(--orange); background:rgba(255,109,45,0.08); }
+  .course-cell.done   { border-color:var(--green-dim); }
+  .course-num   { font-size:0.6rem; color:var(--text-dim); text-transform:uppercase; letter-spacing:1px; }
+  .course-plots { font-family:'Bebas Neue',sans-serif; font-size:1.5rem; line-height:1; color:var(--text); transition:color 0.2s; }
+  .course-cell.active .course-plots { color:var(--orange); }
+  .course-cell.done   .course-plots { color:var(--green); }
+
+  .counter-row { display:grid; grid-template-columns:1fr auto 1fr; gap:8px; align-items:center; }
+  .btn-plot {
+    border:none; cursor:pointer; border-radius:14px; font-family:'Bebas Neue',sans-serif;
+    font-size:2.5rem; line-height:1; transition:all 0.12s; padding:12px;
+    user-select:none; -webkit-user-select:none;
+  }
+  .btn-plot:active { transform:scale(0.93); }
+  #btn-add    { background:var(--green); color:#000; box-shadow:0 4px 20px rgba(0,230,118,0.25); }
+  #btn-add:disabled    { background:var(--surface2); color:var(--text-dim); box-shadow:none; cursor:not-allowed; }
+  #btn-remove { background:var(--surface2); color:var(--text-dim); border:1px solid var(--border); }
+  #btn-remove:disabled { cursor:not-allowed; opacity:0.4; }
+  .counter-display {
+    display:flex; flex-direction:column; align-items:center;
+    background:var(--surface2); border-radius:14px; padding:10px 8px; border:1px solid var(--border);
+  }
+  .counter-display .val { font-family:'Bebas Neue',sans-serif; font-size:clamp(2.2rem,6vw,3.5rem); line-height:1; color:var(--text); }
+  .counter-display .lbl { font-size:0.6rem; color:var(--text-dim); text-transform:uppercase; letter-spacing:1.5px; text-align:center; }
+  .action-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .btn-action {
+    border:none; cursor:pointer; border-radius:14px; font-family:'Bebas Neue',sans-serif;
+    font-size:1.4rem; letter-spacing:2px; padding:14px; transition:all 0.15s;
+  }
+  .btn-action:active { transform:scale(0.96); }
+  #btn-start { background:var(--blue); color:#fff; grid-column:1/-1; box-shadow:0 4px 24px rgba(61,139,255,0.3); }
+  #btn-start.started { background:var(--red); box-shadow:0 4px 24px rgba(255,59,92,0.3); }
+  #btn-reset { background:var(--surface2); color:var(--text-dim); border:1px solid var(--border); font-size:1rem; grid-column:1/-1; display:none; }
+
+  /* ══ RESULT OVERLAY ══ */
+  #result-overlay {
+    display:none; position:fixed; inset:0;
+    background:rgba(0,0,0,0.88); z-index:100;
+    flex-direction:column; align-items:center; justify-content:flex-start;
+    gap:12px; backdrop-filter:blur(10px); padding:16px 16px 28px; overflow-y:auto;
+  }
+  #result-overlay.show { display:flex; }
+
+  .result-card {
+    background:var(--surface); border:1px solid var(--border); border-radius:22px;
+    padding:22px 22px; max-width:500px; width:100%; text-align:center;
+  }
+  .result-title { font-family:'Bebas Neue',sans-serif; font-size:1.05rem; letter-spacing:4px; color:var(--text-dim); margin-bottom:8px; }
+  .result-names { display:flex; justify-content:space-between; gap:8px; margin-bottom:10px; text-align:left; }
+  .result-name-block { background:var(--surface2); border-radius:10px; padding:8px 12px; flex:1; min-width:0; }
+  .result-name-block .rlbl { font-size:0.58rem; color:var(--text-dim); text-transform:uppercase; letter-spacing:1.5px; display:block; margin-bottom:2px; }
+  .result-name-block .rval { font-size:0.88rem; font-weight:600; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .result-vma { font-family:'Bebas Neue',sans-serif; font-size:clamp(3.5rem,14vw,5.5rem); line-height:1; color:var(--green); text-shadow:0 0 60px rgba(0,230,118,0.5); }
+  .result-unit { font-size:0.82rem; color:var(--text-dim); letter-spacing:1px; text-transform:uppercase; margin-bottom:4px; }
+  .result-distance-row { display:flex; justify-content:center; gap:14px; margin:8px 0 4px; }
+  .result-dist-block { background:var(--surface2); border-radius:10px; padding:8px 16px; text-align:center; }
+  .result-dist-block .dval { font-family:'Bebas Neue',sans-serif; font-size:1.5rem; color:var(--blue); line-height:1; }
+  .result-dist-block .dlbl { font-size:0.6rem; color:var(--text-dim); text-transform:uppercase; letter-spacing:1px; }
+  .result-detail { display:grid; grid-template-columns:repeat(5,1fr); gap:6px; margin-top:12px; }
+  .result-mini { background:var(--surface2); border-radius:8px; padding:6px 4px; font-size:0.65rem; color:var(--text-dim); }
+  .result-mini span { display:block; font-family:'Bebas Neue',sans-serif; font-size:1.1rem; color:var(--green); letter-spacing:1px; }
+  .result-formula { margin-top:10px; font-size:0.62rem; color:var(--text-dim); letter-spacing:0.5px; }
+
+  /* ── Historique ── */
+  .history-card {
+    background:var(--surface); border:1px solid var(--border); border-radius:20px;
+    padding:18px 18px; max-width:500px; width:100%;
+  }
+  .history-title {
+    font-family:'Bebas Neue',sans-serif; font-size:1rem; letter-spacing:3px;
+    color:var(--blue); margin-bottom:10px; text-align:center;
+  }
+  #history-loading { font-size:0.78rem; color:var(--text-dim); text-align:center; padding:6px 0; }
+  #history-list { display:flex; flex-direction:column; gap:6px; }
+  .history-row {
+    display:grid; grid-template-columns:1fr auto auto auto;
+    gap:8px; align-items:center;
+    background:var(--surface2); border-radius:10px; padding:8px 12px;
+    border:1px solid transparent;
+  }
+  .history-row.current-test { border-color:rgba(0,230,118,0.4); }
+  .history-date    { font-size:0.68rem; color:var(--text-dim); }
+  .history-reperes { font-size:0.75rem; color:var(--text-dim); }
+  .history-dist    { font-size:0.75rem; color:var(--blue); }
+  .history-vma     { font-family:'Bebas Neue',sans-serif; font-size:1.2rem; color:var(--green); letter-spacing:1px; white-space:nowrap; }
+  .history-vma.best { color:var(--orange); }
+  #history-chart-wrap { margin-top:12px; background:var(--surface2); border-radius:12px; padding:10px 8px 6px; }
+
+  /* Boutons résultats */
+  #save-status { font-size:0.7rem; color:var(--text-dim); letter-spacing:1px; text-align:center; min-height:1.2em; transition:color 0.3s; }
+  #save-status.ok  { color:var(--green); }
+  #save-status.err { color:var(--red); }
+  #btn-close-result {
+    background:var(--green); color:#000; border:none; border-radius:14px;
+    font-family:'Bebas Neue',sans-serif; font-size:1.4rem; letter-spacing:2px;
+    padding:14px 40px; cursor:pointer; max-width:500px; width:100%;
+  }
+
+  @keyframes flash-green  { 0%,100%{background:var(--surface)} 50%{background:rgba(0,230,118,0.15)} }
+  @keyframes flash-orange { 0%,100%{background:var(--surface)} 50%{background:rgba(255,109,45,0.15)} }
+  .chrono-panel.flash-run  { animation:flash-green  0.25s ease; }
+  .chrono-panel.flash-rest { animation:flash-orange 0.25s ease; }
+</style>
+</head>
+<body>
+
+<!-- ══ MODAL IDENTITÉ ══ -->
+<div id="identity-modal">
+  <div class="identity-card">
+    <h2>Test VMA</h2>
+    <p>36″ course · 24″ pause · repères / 10m</p>
+    <div id="base-info" class="id-msg"></div>
+
+    <div class="id-section">
+      <div class="id-section-title">🏃 Coureur</div>
+      <div class="id-row">
+        <div class="id-field"><label for="runner-nom">Nom</label>
+          <input type="text" id="runner-nom" placeholder="NOM" autocomplete="off" autocapitalize="characters" spellcheck="false"></div>
+        <div class="id-field"><label for="runner-prenom">Prénom</label>
+          <input type="text" id="runner-prenom" placeholder="Prénom" autocomplete="off" spellcheck="false"></div>
+      </div>
+      <div id="runner-msg" class="id-msg"></div>
+    </div>
+
+    <div class="id-section">
+      <div class="id-section-title">👁 Observateur</div>
+      <div class="id-row">
+        <div class="id-field"><label for="obs-nom">Nom</label>
+          <input type="text" id="obs-nom" placeholder="NOM" autocomplete="off" autocapitalize="characters" spellcheck="false"></div>
+        <div class="id-field"><label for="obs-prenom">Prénom</label>
+          <input type="text" id="obs-prenom" placeholder="Prénom" autocomplete="off" spellcheck="false"></div>
+      </div>
+      <div class="id-hint">Si c'est le prof : écrire « prof » dans Nom.</div>
+      <div id="obs-msg" class="id-msg"></div>
+    </div>
+
+    <div id="id-pick"></div>
+    <button id="btn-start-test">▶ COMMENCER</button>
+
+    <div class="id-tools">
+      <button class="btn-tool" id="btn-import">📂 Importer la liste</button>
+      <button class="btn-tool" id="btn-export-base">⬇ Exporter la sauvegarde</button>
+    </div>
+    <input type="file" id="file-import" accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden>
+    <div id="tool-msg" class="id-msg"></div>
+    <div class="id-hint" style="text-align:center;">v<span id="ver"></span> · données stockées uniquement sur cet appareil</div>
+  </div>
+</div>
+
+<!-- ══ HEADER ══ -->
+<header>
+  <div>
+    <h1>Test VMA</h1>
+    <div class="subtitle">36″ course · 24″ pause · repères / 10m</div>
+  </div>
+  <div class="header-right">
+    <div class="header-names">
+      <div class="header-name-runner"   id="hdr-runner">—</div>
+      <div class="header-name-observer" id="hdr-observer">—</div>
+    </div>
+    <div id="elapsed-label">0:00</div>
+    <div class="subtitle">durée du test</div>
+  </div>
+</header>
+
+<main>
+  <div class="chrono-panel" id="chrono-panel">
+    <div class="phase-badge" id="phase-badge">EN ATTENTE</div>
+    <div class="arc-wrap">
+      <svg viewBox="0 0 120 120">
+        <circle class="arc-bg" cx="60" cy="60" r="52"/>
+        <circle class="arc-fg" id="arc-fg" cx="60" cy="60" r="52"
+          stroke="var(--green)" stroke-dasharray="326.7" stroke-dashoffset="326.7"/>
+      </svg>
+      <div class="arc-text" id="arc-text">--</div>
+    </div>
+    <div class="big-timer" id="big-timer">--</div>
+    <div id="minute-label">MINUTE 0 / 10</div>
+    <div class="minute-dots" id="minute-dots"></div>
+  </div>
+
+  <div class="controls-panel">
+    <div class="courses-grid" id="courses-grid"></div>
+    <div class="counter-row">
+      <button class="btn-plot" id="btn-remove" disabled>−</button>
+      <div class="counter-display">
+        <div class="val" id="current-plots">0</div>
+        <div class="lbl">Repères franchis<br>cette minute</div>
+      </div>
+      <button class="btn-plot" id="btn-add" disabled>+</button>
+    </div>
+    <div class="action-row">
+      <button class="btn-action" id="btn-start">▶ DÉMARRER LE TEST</button>
+      <button class="btn-action" id="btn-reset">↺ RÉINITIALISER</button>
+    </div>
+  </div>
+</main>
+
+<!-- ══ RESULT OVERLAY ══ -->
+<div id="result-overlay">
+
+  <div class="result-card">
+    <div class="result-title">RÉSULTAT DU TEST VMA</div>
+    <div class="result-names">
+      <div class="result-name-block">
+        <span class="rlbl">🏃 Coureur</span>
+        <div class="rval" id="res-runner-name">—</div>
+      </div>
+      <div class="result-name-block">
+        <span class="rlbl">👁 Observateur</span>
+        <div class="rval" id="res-obs-name">—</div>
+      </div>
+    </div>
+    <div class="result-vma" id="result-vma-val">0</div>
+    <div class="result-unit">km/h — Vitesse Maximale Aérobie</div>
+    <div class="result-distance-row">
+      <div class="result-dist-block">
+        <div class="dval" id="res-total-reperes">0</div>
+        <div class="dlbl">Repères franchis</div>
+      </div>
+      <div class="result-dist-block">
+        <div class="dval" id="res-total-distance">0 m</div>
+        <div class="dlbl">Distance totale</div>
+      </div>
+    </div>
+    <div class="result-detail" id="result-detail"></div>
+    <div class="result-formula">VMA = (Nb repères ÷ 10) × 0,8 &nbsp;·&nbsp; Distance = Nb repères × 10 m</div>
+  </div>
+
+  <!-- Historique -->
+  <div class="history-card">
+    <div class="history-title">📈 HISTORIQUE DU COUREUR</div>
+    <div id="history-loading">Chargement…</div>
+    <div id="history-list"></div>
+    <div id="history-chart-wrap" style="display:none;">
+      <canvas id="history-chart" height="110"></canvas>
+    </div>
+  </div>
+
+  <div id="save-status"></div>
+  <button id="btn-export-res">⬇ Exporter la sauvegarde (XLSX)</button>
+  <button id="btn-close-result">FERMER</button>
+</div>
+
+<script src="version.js"></script>
+<script src="eps-core.js"></script>
+
+<script>
+// ══ AUDIO ══
+let audioCtx = null;
+function getAudio() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+function beep(freq=880, dur=0.12, vol=1.0, delay=0) {
+  const ctx=getAudio(), t=ctx.currentTime+delay;
+  const osc=ctx.createOscillator(), gain=ctx.createGain();
+  osc.connect(gain); gain.connect(ctx.destination);
+  osc.type='square'; osc.frequency.value=freq;
+  gain.gain.setValueAtTime(vol,t);
+  gain.gain.exponentialRampToValueAtTime(0.001,t+dur);
+  osc.start(t); osc.stop(t+dur+0.01);
+}
+function threeBeeps(type) {
+  const freq = type==='run' ? 1320 : 880;
+  for(let i=0;i<3;i++) beep(freq,0.15,1.0,i*0.22);
+}
+
+// ══ STATE ══
+const TOTAL_MINUTES=10, RUN_SEC=36, REST_SEC=24, CYCLE_SEC=60;
+let running=false, minuteData=new Array(TOTAL_MINUTES).fill(null);
+let currentMinute=0, currentPlotsThisMinute=0, masterTimer=null, elapsedTotal=0;
+
+// ══ DOM refs ══
+const elElapsed       = document.getElementById('elapsed-label');
+const elPhaseBadge    = document.getElementById('phase-badge');
+const elBigTimer      = document.getElementById('big-timer');
+const elArcFg         = document.getElementById('arc-fg');
+const elArcText       = document.getElementById('arc-text');
+const elMinuteLabel   = document.getElementById('minute-label');
+const elDots          = document.getElementById('minute-dots');
+const elCoursesGrid   = document.getElementById('courses-grid');
+const elCurrentPlots  = document.getElementById('current-plots');
+const elBtnAdd        = document.getElementById('btn-add');
+const elBtnRemove     = document.getElementById('btn-remove');
+const elBtnStart      = document.getElementById('btn-start');
+const elBtnReset      = document.getElementById('btn-reset');
+const elChronoPanel   = document.getElementById('chrono-panel');
+const elResultOverlay = document.getElementById('result-overlay');
+const elResultVma     = document.getElementById('result-vma-val');
+const elResultDetail  = document.getElementById('result-detail');
+
+//══════════════════════════════════════
+// IDENTIFICATION (base partagée Mes Apps EPS)
+//══════════════════════════════════════
+const APP_ID='vma';                       // sans « _ » (format des colonnes APP_<id>_<champ>)
+let runner=null, observer=null;           // observer = {prof:true} ou élève
+const $=id=>document.getElementById(id);
+const esc=t=>String(t??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const dispName=e=>`${e.prenom} ${e.nom.toUpperCase()}`;
+const setMsg=(el,t,c)=>{el.textContent=t;el.className='id-msg'+(c?' '+c:'')};
+$('ver').textContent=APP_VERSION;
+
+async function refreshBase(){
+  const n=(await EPS.all()).length;
+  setMsg($('base-info'), n?`👥 ${n} élèves dans la base`:'⚠️ Base vide : importe d\'abord la liste (Pronote .csv ou fichier Mes Apps EPS .xlsx).', n?'ok':'err');
+}
+
+function matchStudents(list,nom,prenom){
+  const n=EPS.norm(nom), p=EPS.norm(prenom); if(!n||!p) return [];
+  const eq=(a,b)=>list.filter(e=>EPS.norm(e.nom)===a&&EPS.norm(e.prenom)===b);
+  let m=eq(n,p); if(m.length) return m;
+  m=eq(p,n); if(m.length) return m;                       // nom/prénom inversés
+  const first=t=>EPS.norm((t||'').split(/[\s-]+/)[0]);    // prénoms composés
+  return list.filter(e=>EPS.norm(e.nom)===n&&first(e.prenom)===first(prenom));
+}
+function pick(matches,title){
+  return new Promise(res=>{
+    const box=$('id-pick'); box.innerHTML=`<div class="id-pick-title">${esc(title)}</div>`;
+    const cnt={}; matches.forEach(e=>cnt[e.classe]=(cnt[e.classe]||0)+1);
+    matches.forEach(e=>{
+      const b=document.createElement('button'); b.className='btn-pick';
+      b.textContent=`${dispName(e)} — ${e.classe||'?'}`+(cnt[e.classe]>1&&e.naissance?` — né(e) le ${e.naissance}`:'');
+      b.onclick=()=>{box.innerHTML='';res(e)}; box.appendChild(b);
+    });
+  });
+}
+async function resolveStudent(nom,prenom,msgEl){
+  const m=matchStudents(await EPS.all(),nom,prenom);
+  if(!m.length){ setMsg(msgEl,'❌ Non reconnu dans la liste. Vérifie l\'orthographe.','err'); return null; }
+  const e=m.length>1 ? await pick(m,'Plusieurs élèves portent ce nom : choisis ta classe') : m[0];
+  setMsg(msgEl,`✅ ${dispName(e)} · ${e.classe||''}`,'ok'); return e;
+}
+const isProf=(n,p)=>['prof','professeur','enseignant'].some(k=>EPS.norm(n)===k||EPS.norm(p)===k);
+
+$('btn-start-test').addEventListener('click', async()=>{
+  const btn=$('btn-start-test'); btn.disabled=true;
+  try{
+    ['runner-msg','obs-msg','tool-msg'].forEach(i=>setMsg($(i),''));
+    if(!(await EPS.all()).length){ setMsg($('tool-msg'),'⚠️ Importe d\'abord la liste des élèves.','err'); return; }
+    const rn=$('runner-nom').value, rp=$('runner-prenom').value;
+    if(!EPS.norm(rn)||!EPS.norm(rp)){ setMsg($('runner-msg'),'Écris ton nom et ton prénom.','err'); return; }
+    const r=await resolveStudent(rn,rp,$('runner-msg')); if(!r) return;
+    const on=$('obs-nom').value, op=$('obs-prenom').value; let o;
+    if(isProf(on,op)){ o={prof:true}; setMsg($('obs-msg'),'✅ Observateur : prof','ok'); }
+    else{
+      if(!EPS.norm(on)||!EPS.norm(op)){ setMsg($('obs-msg'),'Écris le nom et le prénom de l\'observateur, ou « prof ».','err'); return; }
+      o=await resolveStudent(on,op,$('obs-msg')); if(!o) return;
+      if(o.id===r.id){ setMsg($('obs-msg'),'❌ Le coureur ne peut pas être son propre observateur.','err'); return; }
+    }
+    runner=r; observer=o;
+    $('hdr-runner').textContent=`🏃 ${dispName(r)}`;
+    $('hdr-observer').textContent=o.prof?'👁 Prof':`👁 ${dispName(o)}`;
+    $('identity-modal').classList.add('hidden');
+  } finally { btn.disabled=false; }
+});
+
+// Import / export du fichier commun Mes Apps EPS
+$('btn-import').addEventListener('click',()=>$('file-import').click());
+$('file-import').addEventListener('change',async e=>{
+  const f=e.target.files[0]; if(!f) return;
+  try{ const r=await EPS.importFile(f); setMsg($('tool-msg'),`✅ ${r.add} ajouté(s), ${r.upd} mis à jour.`,'ok'); refreshBase(); }
+  catch(err){ setMsg($('tool-msg'),'❌ '+err.message,'err'); }
+  e.target.value='';
+});
+async function exportBackup(msgEl){
+  try{
+    if(!(await EPS.all()).length){ setMsg(msgEl,'Aucune donnée à exporter.','err'); return; }
+    downloadText('sauvegarde_VMA_'+dateSuffix()+'.xlsx', await EPS.exportXLSX(), EPS.XLSX_MIME);
+    setMsg(msgEl,'✅ Sauvegarde téléchargée : à importer dans Mes Apps EPS.','ok');
+  }catch(err){ setMsg(msgEl,'❌ '+err.message,'err'); }
+}
+$('btn-export-base').addEventListener('click',()=>exportBackup($('tool-msg')));
+$('btn-export-res').addEventListener('click',()=>exportBackup($('save-status')));
+function dateSuffix() {
+  const d=new Date();
+  return `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
+}
+function downloadText(filename, content, mimeType) {
+  const blob=new Blob([content],{type:mimeType}), url=URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download=filename;
+  document.body.appendChild(a); a.click();
+  setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); }, 1000);
+}
+
+// ══════════════════════════════════════
+// BUILD UI
+// ══════════════════════════════════════
+function buildDots() {
+  elDots.innerHTML='';
+  for(let i=0;i<TOTAL_MINUTES;i++){
+    const d=document.createElement('div'); d.className='dot'; d.id=`dot-${i}`;
+    elDots.appendChild(d);
+  }
+}
+function buildCourses() {
+  elCoursesGrid.innerHTML='';
+  for(let i=0;i<TOTAL_MINUTES;i++){
+    const c=document.createElement('div'); c.className='course-cell'; c.id=`cell-${i}`;
+    c.innerHTML=`<div class="course-num">Course ${i+1}</div><div class="course-plots" id="cell-val-${i}">—</div>`;
+    elCoursesGrid.appendChild(c);
+  }
+}
+buildDots(); buildCourses();
+
+const ARC_CIRCUM=2*Math.PI*52;
+function setArc(ratio,colorVar) {
+  elArcFg.style.stroke=colorVar;
+  elArcFg.style.strokeDashoffset=ARC_CIRCUM*(1-ratio);
+}
+function getPhaseInfo(elapsed) {
+  const minute=Math.floor(elapsed/CYCLE_SEC), withinMin=elapsed%CYCLE_SEC;
+  const isRun=withinMin<RUN_SEC;
+  return { minute, withinMin, isRun,
+    phaseRemaining: isRun?(RUN_SEC-withinMin):(CYCLE_SEC-withinMin),
+    phaseTotal: isRun?RUN_SEC:REST_SEC };
+}
+
+function updateUI() {
+  const {minute,isRun,phaseRemaining,phaseTotal}=getPhaseInfo(elapsedTotal);
+  const eMin=Math.floor(elapsedTotal/60), eSec=elapsedTotal%60;
+  elElapsed.textContent=`${eMin}:${String(eSec).padStart(2,'0')}`;
+  elElapsed.classList.add('active');
+  elBigTimer.textContent=String(phaseRemaining).padStart(2,'0');
+  elBigTimer.className=`big-timer ${isRun?'run':'rest'}`;
+  elPhaseBadge.textContent=isRun?'🏃 COURSE':'⏸ RÉCUPÉRATION';
+  elPhaseBadge.className=`phase-badge ${isRun?'run':'rest'}`;
+  setArc((phaseTotal-phaseRemaining)/phaseTotal, isRun?'var(--green)':'var(--orange)');
+  elArcText.textContent=phaseRemaining;
+  elArcText.style.color=isRun?'var(--green)':'var(--orange)';
+  elMinuteLabel.textContent=`MINUTE ${minute+1} / ${TOTAL_MINUTES}`;
+  for(let i=0;i<TOTAL_MINUTES;i++){
+    const d=document.getElementById(`dot-${i}`);
+    d.className=i<minute?'dot done':i===minute?'dot current':'dot';
+  }
+  for(let i=0;i<TOTAL_MINUTES;i++){
+    const cell=document.getElementById(`cell-${i}`), val=document.getElementById(`cell-val-${i}`);
+    if(minuteData[i]!==null){ cell.className='course-cell done'; val.textContent=minuteData[i]; }
+    else if(i===minute)     { cell.className='course-cell active'; val.textContent=currentPlotsThisMinute; }
+    else                    { cell.className='course-cell'; val.textContent='—'; }
+  }
+  elCurrentPlots.textContent=currentPlotsThisMinute;
+  elBtnAdd.disabled=!isRun;
+  elBtnRemove.disabled=currentPlotsThisMinute<=0||!isRun;
+}
+
+function onRunStart()  { threeBeeps('run');  flashPanel('run'); }
+function onRestStart() {
+  threeBeeps('rest'); flashPanel('rest');
+  minuteData[currentMinute]=currentPlotsThisMinute;
+  document.getElementById(`cell-val-${currentMinute}`).textContent=currentPlotsThisMinute;
+  currentMinute++; currentPlotsThisMinute=0;
+}
+function flashPanel(type) {
+  elChronoPanel.classList.remove('flash-run','flash-rest');
+  void elChronoPanel.offsetWidth;
+  elChronoPanel.classList.add(`flash-${type}`);
+  setTimeout(()=>elChronoPanel.classList.remove(`flash-${type}`),300);
+}
+function tick() {
+  elapsedTotal++;
+  if(elapsedTotal>TOTAL_MINUTES*CYCLE_SEC){ endTest(); return; }
+  const w=elapsedTotal%CYCLE_SEC;
+  if(w===0) onRunStart(); else if(w===RUN_SEC) onRestStart();
+  updateUI();
+  if(elapsedTotal>=TOTAL_MINUTES*CYCLE_SEC) endTest();
+}
+
+elBtnStart.addEventListener('click',()=>{ getAudio(); running?stopTest():startTest(); });
+function startTest() {
+  running=true; elBtnStart.textContent='■ ARRÊTER LE TEST';
+  elBtnStart.classList.add('started'); elBtnReset.style.display='none';
+  onRunStart(); updateUI(); masterTimer=setInterval(tick,1000);
+}
+function stopTest() {
+  clearInterval(masterTimer); running=false;
+  elBtnStart.textContent='▶ DÉMARRER LE TEST'; elBtnStart.classList.remove('started');
+  elBtnReset.style.display='block'; elBtnAdd.disabled=true; elBtnRemove.disabled=true;
+}
+
+//══════════════════════════════════════
+// FIN DE TEST — calcul VMA + sauvegarde locale (une ligne par test) + affichage de l'évolution
+//══════════════════════════════════════
+const obsLabel=o=>o&&o.prof?'PROF':(o?`${o.nom.toUpperCase()} ${o.prenom}`:'?');
+const pad2=n=>String(n).padStart(2,'0');
+const stamp=d=>`${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())} ${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+const asLignes=v=>{ if(Array.isArray(v)) return v; try{ const a=JSON.parse(v); return Array.isArray(a)?a:[]; }catch(e){ return []; } };
+
+async function endTest() {
+  stopTest();
+  if(minuteData[currentMinute]===null&&currentMinute<TOTAL_MINUTES)
+    minuteData[currentMinute]=currentPlotsThisMinute;
+
+  const validData    = minuteData.filter(v=>v!==null);
+  const totalReperes = validData.reduce((a,b)=>a+b,0);
+  const distanceM    = totalReperes*10;
+  const vmaKmh       = ((totalReperes/10)*0.8).toFixed(2);
+
+  elResultVma.textContent=vmaKmh;
+  $('res-total-reperes').textContent  = totalReperes;
+  $('res-total-distance').textContent = `${distanceM} m`;
+  $('res-runner-name').textContent    = dispName(runner);
+  $('res-obs-name').textContent       = observer.prof?'Prof':dispName(observer);
+  elResultDetail.innerHTML='';
+  validData.forEach((v,i)=>{
+    const div=document.createElement('div'); div.className='result-mini';
+    div.innerHTML=`<span>${v}</span>C${i+1}`; elResultDetail.appendChild(div);
+  });
+  elResultOverlay.classList.add('show');
+
+  const st=$('save-status'); st.textContent='⏳ Enregistrement…'; st.className='';
+  let hist=[];
+  try{
+    // Feuille « vma » du fichier Mes Apps EPS : une ligne par test
+    const ligne={'Date':stamp(new Date()),'Observateur':obsLabel(observer),'Repères':totalReperes,
+                 'Distance (m)':distanceM,'VMA (km/h)':parseFloat(vmaKmh)};
+    validData.forEach((v,i)=>{ ligne['Min '+(i+1)]=v; });
+    const rows=await EPS.getExt(APP_ID);
+    const cur=(rows.find(r=>r.id===runner.id)||{}).data||{};
+    hist=asLignes(cur.lignes).concat(ligne);
+    await EPS.setExt(APP_ID,runner.id,{lignes:hist});
+    st.textContent='✅ Résultat enregistré sur cet appareil'; st.className='ok';
+  }catch(e){
+    console.error(e); st.textContent='⚠️ Enregistrement échoué : '+(e.message||e); st.className='err';
+  }
+  showHistory(hist);
+}
+
+// ══ HISTORIQUE DU COUREUR (lu depuis la base locale) ══
+function showHistory(history) {
+  const loadingEl=$('history-loading'), listEl=$('history-list'), chartWrapEl=$('history-chart-wrap');
+  listEl.innerHTML=''; chartWrapEl.style.display='none';
+  if(!history.length){ loadingEl.textContent='Historique indisponible.'; loadingEl.style.display='block'; return; }
+  loadingEl.style.display='none';
+  const H=history.map(r=>({date:new Date(String(r['Date']).replace(' ','T')),reperes:Number(r['Repères']),vma:Number(r['VMA (km/h)'])}));
+  const bestVma=Math.max(...H.map(r=>r.vma));
+  H.forEach((r,idx)=>{
+    const isLast=idx===H.length-1, isBest=r.vma===bestVma&&H.length>1;
+    const date=isNaN(r.date)?'—':r.date.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric'});
+    const row=document.createElement('div'); row.className='history-row'+(isLast?' current-test':'');
+    row.innerHTML=`
+      <div class="history-date">${date}${isLast?'<br><span style="color:var(--green);font-size:0.58rem;">● ce test</span>':''}</div>
+      <div class="history-reperes">${r.reperes}&nbsp;rep.</div>
+      <div class="history-dist">${r.reperes*10}&nbsp;m</div>
+      <div class="history-vma${isBest?' best':''}">${r.vma.toFixed(2)}<span style="font-size:0.55rem;font-family:'Outfit',sans-serif;"> km/h</span>${isBest?' 🏆':''}</div>`;
+    listEl.appendChild(row);
+  });
+  if(H.length>=2){
+    chartWrapEl.style.display='block';
+    drawChart($('history-chart'),H.map(r=>isNaN(r.date)?'':r.date.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'})),H.map(r=>r.vma),bestVma);
+  }
+}
+
+// Graphique sans dépendance (fonctionne hors ligne)
+function drawChart(cv,labels,vals,best){
+  const dpr=window.devicePixelRatio||1, w=cv.parentElement.clientWidth||300, h=140;
+  cv.width=w*dpr; cv.height=h*dpr; cv.style.width=w+'px'; cv.style.height=h+'px';
+  const c=cv.getContext('2d'); c.scale(dpr,dpr); c.clearRect(0,0,w,h);
+  const L=34,R=10,T=10,B=22; let mn=Math.min(...vals), mx=Math.max(...vals);
+  if(mx-mn<1){mn-=.5;mx+=.5} const pad=(mx-mn)*.15; mn-=pad; mx+=pad;
+  const X=i=>L+(vals.length===1?0:i*(w-L-R)/(vals.length-1)), Y=v=>T+(mx-v)*(h-T-B)/(mx-mn);
+  c.font='10px Outfit,sans-serif'; c.fillStyle='#7a8099'; c.strokeStyle='rgba(255,255,255,0.06)'; c.textAlign='right';
+  for(let k=0;k<=3;k++){const v=mn+(mx-mn)*k/3,y=Y(v); c.beginPath();c.moveTo(L,y);c.lineTo(w-R,y);c.stroke(); c.fillText(v.toFixed(1),L-5,y+3)}
+  c.textAlign='center'; const step=Math.ceil(vals.length/6);
+  labels.forEach((t,i)=>{ if(i%step===0||i===vals.length-1) c.fillText(t,X(i),h-6) });
+  c.beginPath(); vals.forEach((v,i)=>i?c.lineTo(X(i),Y(v)):c.moveTo(X(i),Y(v)));
+  c.strokeStyle='#00e676'; c.lineWidth=2; c.stroke();
+  c.lineTo(X(vals.length-1),h-B); c.lineTo(X(0),h-B); c.closePath(); c.fillStyle='rgba(0,230,118,0.1)'; c.fill();
+  vals.forEach((v,i)=>{c.beginPath();c.arc(X(i),Y(v),4.5,0,7);c.fillStyle=v===best?'#ff6d2d':'#00e676';c.fill()});
+}
+
+// ══ Reset ══
+elBtnReset.addEventListener('click',()=>{
+  minuteData=new Array(TOTAL_MINUTES).fill(null);
+  currentMinute=0; currentPlotsThisMinute=0; elapsedTotal=0;
+  elBtnReset.style.display='none';
+  elBtnStart.textContent='▶ DÉMARRER LE TEST'; elBtnStart.classList.remove('started');
+  elElapsed.textContent='0:00'; elElapsed.classList.remove('active');
+  elBigTimer.textContent='--'; elBigTimer.className='big-timer';
+  elPhaseBadge.textContent='EN ATTENTE'; elPhaseBadge.className='phase-badge';
+  elArcFg.style.strokeDashoffset=ARC_CIRCUM; elArcText.textContent='--';
+  elCurrentPlots.textContent='0';
+  elBtnAdd.disabled=true; elBtnRemove.disabled=true;
+  elMinuteLabel.textContent='MINUTE 0 / 10';
+  buildDots(); buildCourses();
+  elResultOverlay.classList.remove('show');
+  ['runner-nom','runner-prenom','obs-nom','obs-prenom'].forEach(id=>document.getElementById(id).value='');
+  runner=null; observer=null; ['runner-msg','obs-msg','tool-msg'].forEach(i=>setMsg($(i),'')); refreshBase();
+  document.getElementById('identity-modal').classList.remove('hidden');
+});
+
+document.getElementById('btn-close-result').addEventListener('click',()=>{
+  elResultOverlay.classList.remove('show');
+});
+
+elBtnAdd.addEventListener('click',()=>{
+  currentPlotsThisMinute++;
+  elCurrentPlots.textContent=currentPlotsThisMinute; elBtnRemove.disabled=false;
+  elCurrentPlots.style.color='var(--green)';
+  setTimeout(()=>elCurrentPlots.style.color='',200);
+  const c=document.getElementById(`cell-val-${currentMinute}`); if(c) c.textContent=currentPlotsThisMinute;
+});
+elBtnRemove.addEventListener('click',()=>{
+  if(currentPlotsThisMinute>0){
+    currentPlotsThisMinute--;
+    elCurrentPlots.textContent=currentPlotsThisMinute;
+    elBtnRemove.disabled=currentPlotsThisMinute<=0;
+    const c=document.getElementById(`cell-val-${currentMinute}`); if(c) c.textContent=currentPlotsThisMinute;
+  }
+});
+
+setArc(0,'var(--green)');
+refreshBase();
+if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
+</script>
+</body>
+</html>
